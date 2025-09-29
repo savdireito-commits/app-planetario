@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Frequências de Redutor Planetário</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #f1f5f9; /* slate-100 */
+            --bg-dark-start: #1e293b; /* slate-800 */
+            --bg-dark-end: #0f172a; /* slate-900 */
+            --card-light: rgba(255, 255, 255, 0.9);
+            --card-dark: rgba(30, 41, 59, 0.7); /* slate-800 com alpha */
+            --border-light: rgba(203, 213, 225, 0.5); /* slate-300 */
+            --border-dark: rgba(71, 85, 105, 0.5); /* slate-600 */
+            --highlight-blue: #38bdf8; /* sky-400 */
+        }
+        html { scroll-behavior: smooth; }
+        html.dark { color-scheme: dark; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: #1e293b;
+            transition: background-color 0.5s ease;
+        }
+        html.dark body {
+            background-image: linear-gradient(to bottom right, var(--bg-dark-start), var(--bg-dark-end));
+            color: #e2e8f0;
+        }
+        .glass-card {
+            background: var(--card-light);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-light);
+            transition: background-color 0.5s ease, border-color 0.5s ease;
+        }
+        html.dark .glass-card {
+            background: var(--card-dark);
+            border: 1px solid var(--border-dark);
+        }
+        .stage-card {
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            max-height: 1000px;
+            overflow: hidden;
+            transform-origin: top;
+        }
+        .form-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--border-light);
+            transition: border-color 0.3s ease;
+        }
+        html.dark .form-input { border-bottom-color: var(--border-dark); }
+        .form-input:focus { outline: none; border-bottom-color: var(--highlight-blue); }
+        .btn {
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn-primary { background-color: #2563eb; color: white; border-color: #2563eb; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-secondary { background: var(--card-dark); color: white; border-color: var(--border-dark); }
+        html.light .btn-secondary { background: #e2e8f0; color: #1e293b; border-color: #cbd5e1; }
+    </style>
+</head>
+<body class="min-h-screen p-4 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+
+    <div class="w-full max-w-3xl glass-card rounded-2xl p-6 md:p-8 relative shadow-2xl">
+        
+        <button id="theme-toggle" class="absolute top-4 right-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 transition">
+            <svg id="theme-toggle-dark-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+            <svg id="theme-toggle-light-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 10.607a1 1 0 011.414-1.414l.707.707a1 1 0 11-1.414 1.414l-.707-.707zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+        </button>
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-sky-400">Calculadora Planetária</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-2">Análise de Frequências de Vibração</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8 items-end">
+            <div>
+                <label for="input-rpm" class="block text-sm font-medium mb-1">Rotação de Entrada (n1)</label>
+                <input type="number" id="input-rpm" placeholder="Ex: 1800" class="form-input w-full px-2 py-2 text-lg">
+            </div>
+        </div>
+
+        <div id="stages-container" class="space-y-6 mb-6"></div>
+        
+        <div class="flex justify-center mb-8">
+            <button id="add-stage-btn" class="btn bg-sky-500/20 text-sky-400 border-sky-500/50 hover:bg-sky-500/30">+ Adicionar Estágio</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <button id="calculate-btn" class="btn btn-primary shadow-lg shadow-blue-500/20">Calcular</button>
+            <button id="round-btn" class="btn btn-secondary">Arredondar Saída Final</button>
+        </div>
+        
+        <div id="results-container" class="mt-8"></div>
+        
+        <div id="export-buttons" class="hidden mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button id="pdf-btn" class="btn bg-red-600 hover:bg-red-700 text-white">Salvar em PDF</button>
+            <button id="csv-btn" class="btn bg-green-600 hover:bg-green-700 text-white">Salvar em Excel (.csv)</button>
+        </div>
+    </div>
+
+    <script>
+        window.jsPDF = window.jspdf.jsPDF;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Element Selectors ---
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+            const docElement = document.documentElement;
+            const stagesContainer = document.getElementById('stages-container');
+            const addStageBtn = document.getElementById('add-stage-btn');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const roundBtn = document.getElementById('round-btn');
+            const resultsContainer = document.getElementById('results-container');
+            const exportButtonsContainer = document.getElementById('export-buttons');
+            const inputRpmEl = document.getElementById('input-rpm');
+            const pdfBtn = document.getElementById('pdf-btn');
+            const csvBtn = document.getElementById('csv-btn');
+            
+            // --- State ---
+            let stageData = [];
+
+            // --- Functions ---
+            const applyTheme = (theme) => {
+                docElement.classList.remove('light', 'dark');
+                docElement.classList.add(theme);
+                lightIcon.classList.toggle('hidden', theme === 'light');
+                darkIcon.classList.toggle('hidden', theme === 'dark');
+                localStorage.setItem('color-theme', theme);
+            };
+
+            const createStageCard = (stage) => {
+                const isFirstStage = stage.id === 1;
+                return `
+                    <div id="stage-card-${stage.id}" class="stage-card glass-card rounded-lg p-6 relative">
+                        ${!isFirstStage ? `<button class="remove-stage-btn absolute top-3 right-3 text-slate-500 hover:text-red-400 transition" data-stage-id="${stage.id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : ''}
+                        <h3 class="text-xl font-semibold mb-4 text-sky-400">Estágio ${stage.id}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                            <div><label class="text-sm font-medium">Dentes Sol (Zs)</label><input type="number" data-prop="z_sun" value="${stage.z_sun}" class="form-input mt-1 w-full p-2" placeholder="ex: 20"></div>
+                            <div><label class="text-sm font-medium">Dentes Planeta (Zp)</label><input type="number" data-prop="z_planet" value="${stage.z_planet}" class="form-input mt-1 w-full p-2" placeholder="ex: 40"></div>
+                            <div><label class="text-sm font-medium">Dentes Anel (Ze)</label><input type="number" data-prop="z_ring" value="${stage.z_ring}" class="form-input mt-1 w-full p-2" placeholder="ex: 100"></div>
+                            <div><label class="text-sm font-medium">Nº Planetas (p)</label><input type="number" data-prop="num_planets" value="${stage.num_planets}" class="form-input mt-1 w-full p-2" placeholder="ex: 3"></div>
+                            <div class="md:col-span-4"><label class="text-sm font-medium">Componente Fixo</label><select data-prop="fixed" class="form-input mt-1 w-full p-2 bg-transparent border-0 border-b-2"><option value="ring" ${stage.fixed === 'ring' ? 'selected' : ''}>Anel / Externa (Ze)</option><option value="sun" ${stage.fixed === 'sun' ? 'selected' : ''}>Sol (Zs)</option><option value="carrier" ${stage.fixed === 'carrier' ? 'selected' : ''}>Carrier</option></select></div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            const renderStages = () => {
+                stagesContainer.innerHTML = stageData.map(createStageCard).join('');
+                addStageBtn.style.display = stageData.length < 3 ? 'flex' : 'none';
+            };
+
+            const addNewStage = () => {
+                if (stageData.length < 3) {
+                    const newId = stageData.length > 0 ? Math.max(...stageData.map(s => s.id)) + 1 : 1;
+                    stageData.push({ id: newId, z_sun: '', z_planet: '', z_ring: '', num_planets: '', fixed: 'ring' });
+                    renderStages();
+                }
+            };
+
+            const calculateResults = () => {
+                const inputRpm = parseFloat(inputRpmEl.value);
+                if (isNaN(inputRpm) || inputRpm <= 0) {
+                    resultsContainer.innerHTML = `<div class="text-red-400 text-center font-semibold">Por favor, insira um valor válido para Rotação.</div>`;
+                    exportButtonsContainer.classList.add('hidden');
+                    return;
+                }
+                if (stageData.length === 0) {
+                    resultsContainer.innerHTML = `<div class="text-yellow-400 text-center font-semibold">Adicione pelo menos um estágio para calcular.</div>`;
+                    return;
+                }
+                let currentInputRpm = inputRpm;
+                let resultsHTML = '';
+                stageData.forEach((stage) => {
+                    const Zs = parseInt(stage.z_sun), Zp = parseInt(stage.z_planet), Zr = parseInt(stage.z_ring), N = parseInt(stage.num_planets);
+                    if ([Zs, Zp, Zr, N].some(val => isNaN(val) || val <= 0)) {
+                        resultsHTML += `<div class="text-red-400 text-center font-semibold mt-4">Dados inválidos para o Estágio ${stage.id}. Preencha todos os campos.</div>`;
+                        return;
+                    }
+                    if (Zr !== Zs + 2 * Zp) resultsHTML += `<div class="text-yellow-400 text-center font-semibold mt-4">Aviso Estágio ${stage.id}: Configuração de dentes é geometricamente inválida (Ze ≠ Zs + 2*Zp).</div>`;
+                    const F_in = currentInputRpm / 60;
+                    let F_carrier = 0, F_out = 0;
+                    if (stage.fixed === 'ring') { F_carrier = F_in * (Zs / (Zs + Zr)); F_out = F_carrier; } 
+                    else if (stage.fixed === 'sun') { F_carrier = F_in * (Zr / (Zs + Zr)); F_out = F_carrier; } 
+                    else { F_carrier = 0; F_out = F_in * (-Zs / Zr); }
+                    let rel_trans = NaN, F_planet_spin = NaN, FDS = NaN, FDP = NaN;
+                    if (stage.fixed === 'ring') {
+                        rel_trans = (Zs + Zr) / Zs;
+                        F_planet_spin = Math.abs(F_carrier * (Zr / Zp));
+                        FDS = N * Math.abs(F_carrier) * (Zr / Zs);
+                        FDP = 2 * Math.abs(F_carrier) * (Zr / Zp);
+                    }
+                    const GMF = Math.abs(F_carrier - F_in) * Zs;
+                    const FDE = Math.abs(F_carrier * N);
+                    resultsHTML += generateResultCard(stage.id, {F_in, F_out: Math.abs(F_out), F_carrier, GMF, FDE, Zr, rel_trans, F_planet_spin, FDS, FDP});
+                    currentInputRpm = Math.abs(F_out * 60);
+                });
+                resultsContainer.innerHTML = resultsHTML;
+                exportButtonsContainer.classList.toggle('hidden', !resultsHTML.trim());
+            };
+            
+            const generateResultCard = (stageNum, data) => { 
+                const format = (val) => isNaN(val) ? 'N/A' : val.toFixed(5);
+                return `<div class="glass-card rounded-lg p-6 mt-4" data-stage-result="${stageNum}"><h3 class="text-xl font-bold mb-4 text-center text-sky-400">Resultados - Estágio ${stageNum}</h3><div class="grid grid-cols-2 lg:grid-cols-3 gap-3 text-center"><div class="bg-slate-500/10 p-3 rounded-md"><p class="text-xs text-slate-400">Freq. Entrada (Hz)</p><p class="result-value font-semibold text-lg" data-raw="${data.F_in}" data-label="Freq. Entrada (Hz)">${format(data.F_in)}</p></div><div class="bg-slate-500/10 p-3 rounded-md"><p class="text-xs text-slate-400">Freq. Saída (Hz)</p><p class="result-value font-semibold text-lg" data-output-freq="true" data-raw="${data.F_out}" data-label="Freq. Saída (Hz)">${format(data.F_out)}</p></div><div class="bg-slate-500/10 p-3 rounded-md"><p class="text-xs text-slate-400">Freq. Carrier (n2 Hz)</p><p class="result-value font-semibold text-lg" data-raw="${data.F_carrier}" data-label="Freq. Carrier (n2 Hz)">${format(data.F_carrier)}</p></div><div class="bg-slate-500/10 p-3 rounded-md"><p class="text-xs text-slate-400">Relação Transmissão</p><p class="result-value font-semibold text-lg" data-raw="${data.rel_trans}" data-label="Relação Transmissão">${format(data.rel_trans)}</p></div><div class="bg-slate-500/10 p-3 rounded-md"><p class="text-xs text-slate-400">Rotação Planeta (Hz)</p><p class="result-value font-semibold text-lg" data-raw="${data.F_planet_spin}" data-label="Rotação Planeta (Hz)">${format(data.F_planet_spin)}</p></div><div class="bg-red-500/10 p-3 rounded-md"><p class="text-xs text-red-400">GMF (Hz)</p><p class="result-value text-red-400 font-bold text-lg" data-raw="${data.GMF}" data-label="GMF (Hz)">${format(data.GMF)}</p></div><div class="bg-red-500/10 p-3 rounded-md"><p class="text-xs text-red-400">FDS (Dano Sol)</p><p class="result-value text-red-400 font-bold text-lg" data-raw="${data.FDS}" data-label="FDS (Dano Sol)">${format(data.FDS)}</p></div><div class="bg-red-500/10 p-3 rounded-md"><p class="text-xs text-red-400">FDP (Dano Planeta)</p><p class="result-value text-red-400 font-bold text-lg" data-raw="${data.FDP}" data-label="FDP (Dano Planeta)">${format(data.FDP)}</p></div><div class="bg-red-500/10 p-3 rounded-md col-span-2 lg:col-span-3"><p class="text-xs text-red-400">FDE (Dano Anel)</p><p class="result-value text-red-400 font-bold text-lg" data-raw="${data.FDE}" data-label="FDE (Dano Anel)">${format(data.FDE)}</p></div></div></div>`;
+            };
+
+            // --- Event Listeners ---
+            themeToggleBtn.addEventListener('click', () => applyTheme(docElement.classList.contains('dark') ? 'light' : 'dark'));
+            stagesContainer.addEventListener('input', (e) => {
+                if (e.target.dataset.prop) {
+                    const card = e.target.closest('.stage-card');
+                    const stageId = parseInt(card.id.split('-')[2]);
+                    const stage = stageData.find(s => s.id === stageId);
+                    if (stage) stage[e.target.dataset.prop] = e.target.value;
+                }
+            });
+            stagesContainer.addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.remove-stage-btn');
+                if (removeBtn) {
+                    const stageIdToRemove = parseInt(removeBtn.dataset.stageId);
+                    stageData = stageData.filter(s => s.id !== stageIdToRemove);
+                    stageData.forEach((stage, index) => { stage.id = index + 1; });
+                    renderStages();
+                }
+            });
+            addStageBtn.addEventListener('click', addNewStage);
+            calculateBtn.addEventListener('click', calculateResults);
+            roundBtn.addEventListener('click', () => {
+                if(stageData.length === 0) return;
+                const lastResultCard = resultsContainer.querySelector(`[data-stage-result="${stageData.length}"]`);
+                if (lastResultCard) {
+                    const outputFreqEl = lastResultCard.querySelector('[data-output-freq="true"]');
+                    if(outputFreqEl) {
+                        const val = parseFloat(outputFreqEl.dataset.raw);
+                        if (!isNaN(val)) outputFreqEl.textContent = Math.round(val);
+                    }
+                }
+            });
+            
+            pdfBtn.addEventListener('click', () => {
+                if (!resultsContainer.innerHTML.trim()) { return; }
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const isDark = docElement.classList.contains('dark');
+
+                pdf.text("Relatório de Frequências - Redutor Planetário", 105, 15, { align: 'center' });
+                html2canvas(resultsContainer, { 
+                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                    scale: 2 // Higher scale for better quality
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    pdf.addImage(imgData, 'PNG', 10, 25, pdfWidth, pdfHeight);
+                    pdf.save('relatorio-frequencias.pdf');
+                });
+            });
+
+            csvBtn.addEventListener('click', () => {
+                if (!resultsContainer.innerHTML.trim()) { return; }
+                let csvContent = "Estágio,Métrica,Valor\r\n";
+                document.querySelectorAll('[data-stage-result]').forEach(card => {
+                    const stageNum = card.dataset.stageResult;
+                    card.querySelectorAll('.result-value').forEach(el => {
+                        const label = el.dataset.label;
+                        const rawValue = el.dataset.raw;
+                        if(label && rawValue && !isNaN(parseFloat(rawValue))){ 
+                            csvContent += `${stageNum},"${label}",${parseFloat(rawValue).toFixed(5)}\r\n`; 
+                        }
+                    });
+                });
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "resultados-frequencias.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // --- Initialization ---
+            const initializeApp = () => {
+                const savedTheme = localStorage.getItem('color-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                applyTheme(savedTheme);
+                addNewStage();
+            };
+
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
+
