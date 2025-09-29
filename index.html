@@ -253,25 +253,42 @@
                 }
             });
             
-            pdfBtn.addEventListener('click', () => {
-                if (!resultsContainer.innerHTML.trim()) { return; }
+            pdfBtn.addEventListener('click', async () => {
+                const resultCards = document.querySelectorAll('[data-stage-result]');
+                if (resultCards.length === 0) { return; }
+
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
                 const isDark = docElement.classList.contains('dark');
-
                 pdf.text("Relatório de Frequências - Redutor Planetário", 105, 15, { align: 'center' });
-                html2canvas(resultsContainer, { 
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    scale: 2 // Higher scale for better quality
-                }).then(canvas => {
+
+                let yPosition = 25;
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 10;
+
+                for (const card of resultCards) {
+                    const canvas = await html2canvas(card, {
+                        backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                        scale: 2
+                    });
+                    
                     const imgData = canvas.toDataURL('image/png');
                     const imgProps = pdf.getImageProperties(imgData);
-                    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+                    const pdfWidth = pdf.internal.pageSize.getWidth() - (2 * margin);
                     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                    pdf.addImage(imgData, 'PNG', 10, 25, pdfWidth, pdfHeight);
-                    pdf.save('relatorio-frequencias.pdf');
-                });
+
+                    if (yPosition + pdfHeight + margin > pageHeight && yPosition > 25) {
+                        pdf.addPage();
+                        yPosition = 15; // Reset y for new page
+                    }
+
+                    pdf.addImage(imgData, 'PNG', margin, yPosition, pdfWidth, pdfHeight);
+                    yPosition += pdfHeight + 5; // Add some space between cards
+                }
+
+                pdf.save('relatorio-frequencias.pdf');
             });
+
 
             csvBtn.addEventListener('click', () => {
                 if (!resultsContainer.innerHTML.trim()) { return; }
@@ -308,4 +325,5 @@
     </script>
 </body>
 </html>
+
 
